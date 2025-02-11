@@ -1,5 +1,5 @@
 from cmdstanpy   import CmdStanModel
-from .stan_files import get_stan_model
+from stan_files import get_stan_model
 
 models_with_corr = ["interpolation_horseshoe_corr",
                     "maxwellian_horseshoe", 
