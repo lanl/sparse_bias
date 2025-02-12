@@ -1,8 +1,8 @@
 import numpy as np
 
 from cmdstanpy   import CmdStanModel
-from .stan_files  import get_stan_model
-from .utils       import gaussian_basis_matrix, spline_basis_matrix
+from stan_files  import get_stan_model
+from utils       import gaussian_basis_matrix, spline_basis_matrix
 
 models_with_corr = ["interpolation_horseshoe_corr",
                     "maxwellian_horseshoe", 
