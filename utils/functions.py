@@ -1,5 +1,6 @@
 import numpy as np
 
+from scipy.interpolate import BSpline
 
 def maxwellian(T, x):
     return np.sqrt(x) * np.exp(-x/T) * (2./np.sqrt(np.pi)/np.sqrt(T)/T)
@@ -8,23 +9,44 @@ def gaussian_basis(X, mu, sigma):
     return np.exp(-(X - mu)**2 / sigma**2)
 
 
-def get_interpolation_matrix(obs_x_structure: np.ndarray, eval_grid: np.ndarray) -> np.ndarray:
+def gaussian_basis_matrix(X, basis_loc, basis_scale):
+    n = X.shape[0]
+    p = basis_loc.shape[0]
+
+    if xscale == "log":
+        x_input = np.log10(X)
+        x_basis = np.log10(basis_loc)
+    elif xscale == "lin":
+        x_input = X
+        x_basis = basis_loc
+    else:
+        raise ValueError(f"Energy scale {xscale} not recognized, please use 'log' or 'lin'")
+
+    basis_matrix = np.zeros([x_input.shape[0], x_basis.shape[0]])
+    for ii in range(p):
+        basis_matrix[:,ii] = gaussian_basis(x_input, x_basis[ii], basis_scale)
+    return basis_matrix
+
+def spline_basis_matrix(X, basis_loc, basis_order = 3):
+    basis_funcs = BSpline(basis_loc, np.eye(len(basis_loc) - basis_order - 1), basis_order)
+    return basis_funcs(X)
+
+def interpolation_matrix(X: np.ndarray, X_grid: np.ndarray) -> np.ndarray:
     """Generates the interpolation matrix for the x grid, E out (MeV).
 
     Args:
-        obs_x_structure (np.ndarray): x values (E out) corresponding to the observed dataset
-        eval_grid (np.ndarray): The desired evaluation grid, array of E out (MeV) values desired.
+        X (np.ndarray): x values (E out) corresponding to the observed dataset
+        X_grid (np.ndarray): The desired evaluation grid, array of E out (MeV) values desired.
 
     Returns:
         np.ndarray: _description_
     """
 
-    D = np.zeros((len(obs_x_structure), len(eval_grid)))
+    D = np.zeros((len(obs_x_structure), len(X_grid)))
     for ii in range(len(obs_x_structure)):
-        # upper_ind = np.where(obs_x_structure[ii] < eval_grid)[0][0]
-        upper_ind = np.searchsorted(eval_grid, obs_x_structure[ii], 'right')
+        upper_ind = np.searchsorted(X_grid, obs_x_structure[ii], 'right')
         lower_ind = upper_ind - 1
-        weight    = (obs_x_structure[ii] - eval_grid[lower_ind]) / (eval_grid[upper_ind] - eval_grid[lower_ind])
+        weight    = (obs_x_structure[ii] - X_grid[lower_ind]) / (X_grid[upper_ind] - X_grid[lower_ind])
         
         D[ii,upper_ind] = weight
         D[ii,lower_ind] = 1 - weight
@@ -32,21 +54,3 @@ def get_interpolation_matrix(obs_x_structure: np.ndarray, eval_grid: np.ndarray)
     return D
     
 
-def get_gaussian_basis_matrix(x_grid, x_range, n_bases, width, xscale='log'):
-
-    if xscale == 'log':
-        centers = np.linspace(*(np.log10(x_range)), n_bases)
-        x = np.log10(x_grid)
-        w = np.log10(width)
-    elif xscale == 'lin':
-        centers = np.linspace(*x_range, n_bases)
-        x = x_grid
-        w = width
-    else:
-        raise ValueError(f"Energy scale {xscale} not recognized, please use 'log' or 'lin'")
-
-    X = np.repeat( np.atleast_2d(x).T, n_bases, axis=1)
-    mu = np.repeat( np.atleast_2d(centers), len(x), axis=0)
-    B = gaussian_basis(X, mu, w)
-
-    return B
