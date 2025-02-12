@@ -1,24 +1,43 @@
 import numpy as np
 import pandas as pd
 from scipy.linalg      import block_diag
+from utils.basis_gen import generate_list_of_bases
 
 
-def convert_to_stan_data(data_dict_list, basis_dicts, tau_scale=1.e-5, xminmax=None):
+def convert_to_stan_data(data_dict_list, basis_dict_list, tau_scale=1.e-5, xminmax=None):
     
+    # setup experimental data
     all_df, dataCorr = compile_nd_dfs(data_dict_list, xminmax=xminmax)
     
+    # get level masks
     levels     = get_unique_values_from_nested_data(all_df["bias_label"])
     n_levels   = len(levels)
     n_obs      = all_df.shape[0]
     level_mask = np.zeros([n_levels, n_obs])
     for i, level in enumerate(levels):
         level_mask[i,:] = [int(level in x) for x in all_df["bias_label"]]
-        
+    
+    # get data scale masks
     scales     = get_unique_values_from_nested_data(all_df["expt_label"])
     n_scales   = len(scales)
     scale_mask = np.zeros([n_scales, n_obs])
     for i, scale in enumerate(scales):
-        scale_mask[i,:] = [int(scale in x) for x in all_df["expt_label"]]
+        scale_mask[i,:] = [(int(scale in x) and y) for x,y in zip(all_df["expt_label"], all_df["scale_flag"])] # !! Ask mike, is this the best way to handle absolute data... results in a data_scale parameter in odel not being used at all, may be bad for sampling
+    
+    # get basis functions
+        # It would be cool to add the capability for a user defined basis function here, perhaps the dict has a callable function in it?
+    B_mean, B_bias_list = generate_list_of_bases(basis_dict_list, all_df['energy'].values)
+    nbases_mean = B_mean.shape[1]
+
+        # also, we could update this to loop through bias bases definitions and edit .stan files and all_dict to just have have 1-N indexed bias basis functions
+        # This would allow a variable number of bias bases with N = len(basis_dict_list)-1
+    B_s = B_bias_list[0]
+    B_m = B_bias_list[1]
+    B_l = B_bias_list[2]
+    nbases_s = B_s.shape[1]
+    nbases_m = B_m.shape[1]
+    nbases_l = B_l.shape[1]
+
 
     all_dict = {
         "n_observations"    : n_obs,
