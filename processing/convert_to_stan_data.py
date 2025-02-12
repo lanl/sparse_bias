@@ -75,11 +75,16 @@ def compile_nd_dfs(data_dict_list, xminmax=None):
 
 def check_data_dict_list(data_dict_list):
     required_keys = ['energy','exp_val','rel_unc','expt_label','bias_label','scale_flag','corr']
+    expt_labels = []
     for i, data_dict in enumerate(data_dict_list):
         for each in required_keys:
             if each not in data_dict.keys():
                 raise ValueError(f"Key '{each}' not included in data dict {i}")
+        expt_labels.append(data_dict["expt_label"])
 
+    if len(np.unique(expt_labels)) != len(data_dict_list):
+        raise ValueError("Two or more data sets in provided data_dict_list have the same expt_label")
+    
 
 def get_unique_values_from_nested_data(data):
     unique_values = set()
