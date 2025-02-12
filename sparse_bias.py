@@ -70,6 +70,9 @@ class BasisModel:
             self.mean_basis_matrix = spline_basis_matrix(X           = self.data_dict["X"],
                                                          basis_loc   = kwargs["knots"],
                                                          basis_order = kwargs["basis_order"])
+        elif self.mean_basis_type == "interpolation":
+            self.mean_basis_matrix = interpolation_matrix(X           = self.data_dict["X"],
+                                                          basis_loc   = kwargs["X_grid"])
         else:
             print("Invalid mean basis type " + self.mean_basis_type)
         self.n_mean_bases = self.mean_basis_matrix.shape[1]
