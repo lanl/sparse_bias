@@ -14,7 +14,7 @@ def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):
     n_scales   = len(scales)
     scale_mask = np.zeros([n_scales, n_obs])
     for i, scale in enumerate(scales):
-        scale_mask[i,:] = [int(scale in x) for x in data_dict["expt_label"]]
+        scale_mask[i,:] = [(int(scale in x) and y) for x,y in zip(data_dict["expt_label"], data_dict["scale_flag"])] # !! Ask mike, is this the best way to handle absolute data... results in a data_scale parameter in odel not being used at all, may be bad for sampling
 
     all_dict = {
         "n_observations":                        n_obs,
