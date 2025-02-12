@@ -21,23 +21,23 @@ def convert_to_stan_data(data_dict_list, basis_dicts, tau_scale=1.e-5, xminmax=N
         scale_mask[i,:] = [int(scale in x) for x in all_df["expt_label"]]
 
     all_dict = {
-        "n_observations":    n_obs,
-        "n_levels":       n_levels,
-        "n_datascales":   n_scales,
-        # "nbases_mean":    nbases_mean,
-        # "nbases_s":    nbases_s,
-        # "nbases_m":    nbases_m,
-        # "nbases_l":    nbases_l,
-        # "B_mean":             B_mean,
-        # "B_s":                   B_s,
-        # "B_m":                   B_m,
-        # "B_l":                   B_l,
-        "levels_mask":    level_mask,
-        "datascale_mask": scale_mask,
-        "Corr":             dataCorr,
-        "tau_scale":       tau_scale,
-        "y":    all_df["exp_val"].values,
-        "s":    all_df["rel_unc"].values
+        "n_observations"    : n_obs,
+        "n_levels"          : n_levels,
+        "n_datascales"      : n_scales,
+        "nbases_mean"       : nbases_mean,
+        "B_mean"            : B_mean.tolist(),
+        "nbases_s"          : nbases_s,
+        "nbases_m"          : nbases_m,
+        "nbases_l"          : nbases_l,
+        "B_s"               : B_s.tolist(),
+        "B_m"               : B_m.tolist(),
+        "B_l"               : B_l.tolist(),
+        "levels_mask"       : level_mask.tolist(),
+        "datascale_mask"    : scale_mask.tolist(),
+        "Corr"              : dataCorr.tolist(),
+        "tau_scale"         : tau_scale,
+        "y"                 : all_df["exp_val"].values.tolist(),
+        "s"                 : all_df["rel_unc"].values.tolist()
     }
     
     return all_dict
