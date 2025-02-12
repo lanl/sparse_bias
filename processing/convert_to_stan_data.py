@@ -2,20 +2,13 @@ import numpy  as np
 import pandas as pd
 
 def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):    
+    
     n_obs      = len(data_dict["expt_value"])
     
-    levels     = get_unique_values_from_nested_data(data_dict["bias_label"])
-    n_levels   = len(levels)
-    level_mask = np.zeros([n_levels, n_obs])
-    for i, level in enumerate(levels):
-        level_mask[i,:] = [int(level in x) for x in data_dict["bias_label"]]
-        
-    scales     = get_unique_values_from_nested_data(data_dict["expt_label"])
-    n_scales   = len(scales)
-    scale_mask = np.zeros([n_scales, n_obs])
-    for i, scale in enumerate(scales):
-        scale_mask[i,:] = [(int(scale in x) and y) for x,y in zip(data_dict["expt_label"], data_dict["scale_flag"])] # !! Ask mike, is this the best way to handle absolute data... results in a data_scale parameter in odel not being used at all, may be bad for sampling
+    n_levels, level_mask = get_level_mask(n_obs, data_dict["bias_label"])
 
+    n_scales, scale_mask = get_datascale_mask(n_obs, data_dict["expt_label"], data_dict["scale_flag"])
+    
     all_dict = {
         "n_observations":                        n_obs,
         "n_datascales":                       n_scales,
@@ -37,6 +30,21 @@ def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):
     
     return all_dict
 
+def get_datascale_mask(n_obs, data_dict_expt_label, data_dict_scale_flag):
+    scales     = get_unique_values_from_nested_data(data_dict_expt_label)
+    n_scales   = len(scales)
+    scale_mask = np.zeros([n_scales, n_obs])
+    for i, scale in enumerate(scales):
+        scale_mask[i,:] = [(int(scale in x) and y) for x,y in zip(data_dict_expt_label, data_dict_scale_flag)] # !! Ask mike, is this the best way to handle absolute data... results in a data_scale parameter in odel not being used at all, may be bad for sampling
+    return n_scales, scale_mask
+
+def get_level_mask(n_obs, data_dict_bias_label):
+    levels     = get_unique_values_from_nested_data(data_dict_bias_label)
+    n_levels   = len(levels)
+    level_mask = np.zeros([n_levels, n_obs])
+    for i, level in enumerate(levels):
+        level_mask[i,:] = [int(level in x) for x in data_dict_bias_label]
+    return n_levels, level_mask
 
 def get_unique_values_from_nested_data(data):
     unique_values = set()
