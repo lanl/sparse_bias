@@ -18,15 +18,15 @@ def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):
         "nbases_s":                basis_obj.n_bases_s,
         "nbases_m":                basis_obj.n_bases_m,
         "nbases_l":                basis_obj.n_bases_l,
-        "B_mean":          basis_obj.mean_basis_matrix,
-        "B_s":           basis_obj.bias_basis_matrix_s,
-        "B_m":           basis_obj.bias_basis_matrix_m,
-        "B_l":           basis_obj.bias_basis_matrix_l,
-        "levels_mask":                      level_mask,
-        "datascale_mask":                   scale_mask,
-        "Corr":                      data_dict["corr"],
-        "y":                   data_dict["expt_value"],
-        "s":                      data_dict["rel_unc"]}
+        "B_mean":          basis_obj.mean_basis_matrix.tolist(),
+        "B_s":           basis_obj.bias_basis_matrix_s.tolist(),
+        "B_m":           basis_obj.bias_basis_matrix_m.tolist(),
+        "B_l":           basis_obj.bias_basis_matrix_l.tolist(),
+        "levels_mask":                      level_mask.tolist(),
+        "datascale_mask":                   scale_mask.tolist(),
+        "Corr":                      data_dict["corr"].tolist(),
+        "y":                   data_dict["expt_value"].tolist(),
+        "s":                      data_dict["rel_unc"].tolist()}
     
     return all_dict
 
