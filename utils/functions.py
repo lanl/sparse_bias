@@ -32,9 +32,9 @@ def gaussian_basis_matrix(X, basis_loc, basis_scale, x_scale="lin"):
     else:
         raise ValueError(f"Energy scale {x_scale} not recognized, please use 'log' or 'lin'")
 
-    basis_matrix = np.zeros([x_input.shape[0], x_basis.shape[0]])
+    basis_matrix = np.zeros([X.shape[0], basis_loc.shape[0]])
     for ii in range(p):
-        basis_matrix[:,ii] = gaussian_basis(x_input, x_basis[ii], basis_scale)
+        basis_matrix[:,ii] = gaussian_basis(X, basis_loc[ii], basis_scale)
     return basis_matrix
 
 def spline_basis_matrix(X, basis_loc, basis_order = 3):
@@ -50,22 +50,22 @@ def spline_basis_matrix(X, basis_loc, basis_order = 3):
     basis_funcs = BSpline(basis_loc, np.eye(len(basis_loc) - basis_order - 1), basis_order)
     return basis_funcs(X)
 
-def interpolation_matrix(X: np.ndarray, X_grid: np.ndarray) -> np.ndarray:
+def interpolation_matrix(X: np.ndarray, basis_loc: np.ndarray) -> np.ndarray:
     """Generates the interpolation matrix for the x grid
 
     Args:
-        X (np.ndarray): x values corresponding to the observed dataset
-        X_grid (np.ndarray): The desired evaluation grid for linear interpolation knots
+        X         (np.ndarray): x values corresponding to the observed dataset
+        basis_loc (np.ndarray): The desired evaluation grid for linear interpolation knots
 
     Returns:
         np.ndarray: Matrix of linear interpolation weights
     """
 
-    D = np.zeros((len(obs_x_structure), len(X_grid)))
-    for ii in range(len(obs_x_structure)):
-        upper_ind = np.searchsorted(X_grid, obs_x_structure[ii], 'right')
+    D = np.zeros((len(X), len(basis_loc)))
+    for ii in range(len(X)):
+        upper_ind = np.searchsorted(basis_loc, X[ii], 'right')
         lower_ind = upper_ind - 1
-        weight    = (obs_x_structure[ii] - X_grid[lower_ind]) / (X_grid[upper_ind] - X_grid[lower_ind])
+        weight    = (X[ii] - basis_loc[lower_ind]) / (basis_loc[upper_ind] - basis_loc[lower_ind])
         
         D[ii,upper_ind] = weight
         D[ii,lower_ind] = 1 - weight

@@ -2,20 +2,13 @@ import numpy  as np
 import pandas as pd
 
 def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):    
+    
     n_obs      = len(data_dict["expt_value"])
     
-    levels     = get_unique_values_from_nested_data(data_dict["bias_label"])
-    n_levels   = len(levels)
-    level_mask = np.zeros([n_levels, n_obs])
-    for i, level in enumerate(levels):
-        level_mask[i,:] = [int(level in x) for x in data_dict["bias_label"]]
-        
-    scales     = get_unique_values_from_nested_data(data_dict["expt_label"])
-    n_scales   = len(scales)
-    scale_mask = np.zeros([n_scales, n_obs])
-    for i, scale in enumerate(scales):
-        scale_mask[i,:] = [int(scale in x) for x in data_dict["expt_label"]]
+    n_levels, level_mask = get_level_mask(n_obs, data_dict["bias_label"])
 
+    n_scales, scale_mask = get_datascale_mask(n_obs, data_dict["expt_label"], data_dict["scale_flag"])
+    
     all_dict = {
         "n_observations":                        n_obs,
         "n_datascales":                       n_scales,
@@ -25,18 +18,33 @@ def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):
         "nbases_s":                basis_obj.n_bases_s,
         "nbases_m":                basis_obj.n_bases_m,
         "nbases_l":                basis_obj.n_bases_l,
-        "B_mean":          basis_obj.mean_basis_matrix,
-        "B_s":           basis_obj.bias_basis_matrix_s,
-        "B_m":           basis_obj.bias_basis_matrix_m,
-        "B_l":           basis_obj.bias_basis_matrix_l,
-        "levels_mask":                      level_mask,
-        "datascale_mask":                   scale_mask,
-        "Corr":                      data_dict["corr"],
-        "y":                   data_dict["expt_value"],
-        "s":                      data_dict["rel_unc"]}
+        "B_mean":          basis_obj.mean_basis_matrix.tolist(),
+        "B_s":           basis_obj.bias_basis_matrix_s.tolist(),
+        "B_m":           basis_obj.bias_basis_matrix_m.tolist(),
+        "B_l":           basis_obj.bias_basis_matrix_l.tolist(),
+        "levels_mask":                      level_mask.tolist(),
+        "datascale_mask":                   scale_mask.tolist(),
+        "Corr":                      data_dict["corr"].tolist(),
+        "y":                   data_dict["expt_value"].tolist(),
+        "s":                      data_dict["rel_unc"].tolist()}
     
     return all_dict
 
+def get_datascale_mask(n_obs, data_dict_expt_label, data_dict_scale_flag):
+    scales     = get_unique_values_from_nested_data(data_dict_expt_label)
+    n_scales   = len(scales)
+    scale_mask = np.zeros([n_scales, n_obs])
+    for i, scale in enumerate(scales):
+        scale_mask[i,:] = [(int(scale in x) and y) for x,y in zip(data_dict_expt_label, data_dict_scale_flag)] # !! Ask mike, is this the best way to handle absolute data... results in a data_scale parameter in odel not being used at all, may be bad for sampling
+    return n_scales, scale_mask
+
+def get_level_mask(n_obs, data_dict_bias_label):
+    levels     = get_unique_values_from_nested_data(data_dict_bias_label)
+    n_levels   = len(levels)
+    level_mask = np.zeros([n_levels, n_obs])
+    for i, level in enumerate(levels):
+        level_mask[i,:] = [int(level in x) for x in data_dict_bias_label]
+    return n_levels, level_mask
 
 def get_unique_values_from_nested_data(data):
     unique_values = set()

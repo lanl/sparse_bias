@@ -7,9 +7,10 @@ import json
 
 from scipy.interpolate import BSpline
 
-from sparse_bias import BiasModel
-from processing  import read_json, convert_to_stan_data
+from sparse_bias import BiasModel, BasisModel 
+from processing  import convert_to_stan_data
 from utils.functions import gaussian_basis, maxwellian
+from processing.AIACHNE import read_aiachne_json, compile_nd_dfs, convert_to_data_dict
 
 import matplotlib.pyplot as plt
 
@@ -33,7 +34,7 @@ x_obs2, y_obs2, y_obs2_unc = make_measurement(1e-1, 9, 10, 0.05)
 x_obs3, y_obs3, y_obs3_unc = make_measurement(1e-3, 2, 20, 0.07) 
 
 nd1 = {'energy'     : x_obs1,
-       'exp_val'     : y_obs1,
+       'expt_val'     : y_obs1,
        'rel_unc'     : y_obs1_unc,
        'expt_label'  : 'exp1',
        'bias_label' : 'a',
@@ -41,7 +42,7 @@ nd1 = {'energy'     : x_obs1,
        'corr'       : np.eye(len(x_obs1)) }
 
 nd2 = {'energy'     : x_obs1,
-       'exp_val'     : y_obs1,
+       'expt_val'     : y_obs1,
        'rel_unc'     : y_obs1_unc,
        'expt_label'  : 'exp2',
        'bias_label' : 'b',
@@ -49,10 +50,10 @@ nd2 = {'energy'     : x_obs1,
        'corr'       : np.eye(len(x_obs2)) }
 
 nd3 = {'energy'     : x_obs1,
-       'exp_val'     : y_obs1,
+       'expt_val'     : y_obs1,
        'rel_unc'     : y_obs1_unc,
        'expt_label'  : 'exp3',
-       'bias_label' : 'a',
+       'bias_label' : ['a', 'b'],
        'scale_flag' : 0,
        'corr'       : np.eye(len(x_obs3)) }
 
@@ -94,40 +95,39 @@ data_dict_list = [nd1, nd2, nd3]
 
 basis_dict_list = [bmean, b1, b2, b3]
 
-# from utils.basis_gen import generate_list_of_bases
-# B_mean, B_bias = generate_list_of_bases(basis_dict_list,all_df['energy'].values)
+all_df, corr = compile_nd_dfs(data_dict_list, xminmax=[None,20.])
+data_dict    = convert_to_data_dict(all_df, corr)
 
+############
+#
+# Build relevant Basis functions
+#
+basis_obj = BasisModel(data_dict,
+                       mean_basis_type = "gaussian",
+                       bias_basis_type = "gaussian")
 
-stan_data = convert_to_stan_data(data_dict_list, basis_dict_list)
+minE = np.log10(0.0001)
+maxE = np.log10(50)
 
+# Gaussian bases for the mean
+centers  = np.linspace(minE, maxE, 30)
+width    = 0.2
+basis_obj.generate_mean_bases(centers=centers, widths=width)
 
-test_model = BiasModel(stan_data,
-                       model_name = "interpolation_horseshoe")
-                 #       mean_bases = "gaussian",
-                 # bias_bases = "gaussian"):
+# Gaussian bases for the bias
+centers  = [
+    np.linspace(minE, maxE, 50), 
+    np.linspace(minE, maxE, 25),
+    np.linspace(minE, maxE, 10)
+]
+widths   = [0.05, 0.2, 0.5]
+basis_obj.generate_bias_bases(centers=centers, widths=widths)
 
-if __name__ == "__main__":
-    test_model.fit()        ### seems like I have arch problems, see stan forums for error during processing Operation not permitted 
-
-# import os 
-# import json
-
-# jsonfile = os.path.join("/Users/nwalton/Software/sparse_bias/test_runDIR", f"stan_data.json")
-# outfile = os.path.join("/Users/nwalton/Software/sparse_bias/test_runDIR", f"output.csv")
-
-# if os.path.isfile(jsonfile):
-#     os.remove(jsonfile)
-# if os.path.isfile(outfile):
-#     os.remove(outfile)
-
-# # write new file
-# with open(jsonfile, "w") as f:
-#     json.dump(stan_data, f)
-
-# os.system(f"{os.path.join(stan_RTO.cmdstanDIR,stan_RTO.cmdstan)} sample \
-#                 num_warmup=1000 num_samples={stan_RTO.samples} num_chains=4 \
-#                     data file={jsonfile} output file={outfile}")
-
-
+############
+#
+# Convert to a dict in the format for stan
+#
+stan_data    = convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5)
+print(stan_data)
 
 # %%

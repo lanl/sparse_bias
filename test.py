@@ -5,8 +5,8 @@ import pandas  as pd
 import matplotlib.pyplot as plt
 
 from sparse_bias                    import BiasModel, BasisModel 
-from sparse_bias.processing         import convert_to_stan_data
-from sparse_bias.processing.AIACHNE import read_aiachne_json, compile_nd_dfs, convert_to_data_dict
+from processing         import convert_to_stan_data
+from processing.AIACHNE import read_aiachne_json, compile_nd_dfs, convert_to_data_dict
 
 ############
 #

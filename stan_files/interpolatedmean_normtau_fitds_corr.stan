@@ -45,9 +45,9 @@ transformed parameters{
   vector[n_observations]           mu;
   vector[n_observations] mu_corrected;
   
-  array[n_levels] vector[nb_s] gamma_s;
-  array[n_levels] vector[nb_m] gamma_m;
-  array[n_levels] vector[nb_l] gamma_l;
+  array[n_levels] vector[nbases_s] gamma_s;
+  array[n_levels] vector[nbases_m] gamma_m;
+  array[n_levels] vector[nbases_l] gamma_l;
 
   for (i in 1:n_levels){
     gamma_s[i] = gamma_tilde_s[i] .* lambda_s[i] * tau_scale * tau_s;
@@ -61,20 +61,18 @@ transformed parameters{
   for (i in 1:n_levels) {
     mu_corrected = mu_corrected .* exp( (B_s * gamma_s[i] + B_m * gamma_m[i] + B_l * gamma_l[i]) .* levels_mask[,i] );
   }
-  for (i in 1:n_levels) {
+  for (i in 1:n_datascales) {
     mu_corrected = mu_corrected .* (data_scale[i] * datascale_mask[,i]);
   }
 }
 model {
-  vector[N] ytrans;
+  vector[n_observations] ytrans;
   
   sigma  ~ normal(0, 10.);
 
   for (i in 1:n_datascales) {
     data_scale[i] ~ normal(1,0.01);
   }
-  
-  mu = D * sigma; 
   
   ytrans = invL * ((y - mu_corrected)./(mu .* s + 1e-10) );
   ytrans ~ std_normal();

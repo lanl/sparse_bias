@@ -58,17 +58,19 @@ def read_aiachne_json(fn, bias_category = "Expt_Name"):
     return data_list
     
 def compile_nd_dfs(data_dict_list, xminmax=[None, None]):
+
+    check_data_dict_list(data_dict_list)
+
     # could test correlation matrices here
     dataCorr = block_diag(*[x["corr"] for x in data_dict_list])
     
     # setup all df from list of data dicts
-    nd_dfs   = [pd.DataFrame({"energy"      : data_dict["energy"],
-                              "values"      : data_dict["values"], 
+    nd_dfs   = [pd.DataFrame({"energy"      : data_dict["energy"], 
+                              "expt_val"    : data_dict["expt_val"], 
                               "rel_unc"     : data_dict["rel_unc"], 
-                              "expt_label"  : np.repeat(data_dict["name"],data_dict["n"]), 
-                              "bias_label"  : np.repeat(data_dict["bias_label"],data_dict["n"])
-                             }) 
-                for data_dict in data_dict_list]
+                              "expt_label"  : np.repeat(data_dict["expt_label"],data_dict["n"]), 
+                              "bias_label"  : np.repeat(data_dict["bias_label"],data_dict["n"]),
+                              "scale_flag"  : data_dict["scale_flag"]})  for data_dict in data_dict_list]
     all_df = pd.concat(nd_dfs)
     all_df = all_df.reset_index().drop("index", axis=1)
 
@@ -89,13 +91,29 @@ def compile_nd_dfs(data_dict_list, xminmax=[None, None]):
 
     return all_df, dataCorr
 
+
+def check_data_dict_list(data_dict_list):
+    required_keys = ['energy','expt_val','rel_unc','expt_label','bias_label','scale_flag','corr']
+    expt_labels = []
+    for i, data_dict in enumerate(data_dict_list):
+        for each in required_keys:
+            if each not in data_dict.keys():
+                raise ValueError(f"Key '{each}' not included in data dict {i}")
+        expt_labels.append(data_dict["expt_label"])
+
+    if len(np.unique(expt_labels)) != len(data_dict_list):
+        raise ValueError("Two or more data sets in provided data_dict_list have the same expt_label")
+    
+
+
 def convert_to_data_dict(data_df, dataCorr):
     data_dict = {
-        "bias_label": data_df["bias_label"],
-        "expt_label": data_df["expt_label"],
-        "expt_value":     data_df["values"],
-        "rel_unc":       data_df["rel_unc"],
-        "X":              data_df["energy"],
-        "corr":                    dataCorr}
+        "bias_label"    : data_df["bias_label"],
+        "expt_label"    : data_df["expt_label"],
+        "scale_flag"    : data_df["scale_flag"],
+        "expt_value"    : data_df["expt_val"],
+        "rel_unc"       : data_df["rel_unc"],
+        "X"             : data_df["energy"],
+        "corr"          : dataCorr}
     return data_dict
 

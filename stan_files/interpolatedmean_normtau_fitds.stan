@@ -40,9 +40,9 @@ transformed parameters{
   vector[n_observations]           mu;
   vector[n_observations] mu_corrected;
   
-  array[n_levels] vector[nb_s] gamma_s;
-  array[n_levels] vector[nb_m] gamma_m;
-  array[n_levels] vector[nb_l] gamma_l;
+  array[n_levels] vector[nbases_s] gamma_s;
+  array[n_levels] vector[nbases_m] gamma_m;
+  array[n_levels] vector[nbases_l] gamma_l;
 
   sigma = beta_mean;
   for (i in 1:n_levels){

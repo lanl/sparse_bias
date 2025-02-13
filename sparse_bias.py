@@ -1,8 +1,8 @@
 import numpy as np
 
 from cmdstanpy   import CmdStanModel
-from .stan_files  import get_stan_model
-from .utils       import gaussian_basis_matrix, spline_basis_matrix
+from stan_files  import get_stan_model
+from utils       import gaussian_basis_matrix, spline_basis_matrix, interpolation_matrix
 
 models_with_corr = ["interpolation_horseshoe_corr",
                     "maxwellian_horseshoe", 
@@ -20,8 +20,8 @@ class BiasModel:
     def __init__(self, data_dict, basis_model,
                  model_name = "interpolation_horseshoe_corr"
                 ):
-        assert basis_model.mean_basis in ["gaussian", "spline"]
-        assert basis_model.bias_basis in ["gaussian", "spline"]
+        assert basis_model.mean_basis_type in ["gaussian", "spline", "interpolation"]
+        assert basis_model.bias_basis_type in ["gaussian", "spline"]
         
         self.data_dict   = data_dict
         self.basis_model = basis_model
@@ -50,7 +50,7 @@ class BasisModel:
     def __init__(self, data_dict,
                  mean_basis_type = "gaussian",
                  bias_basis_type = "gaussian"):
-        assert mean_basis_type in ["gaussian", "spline"]
+        assert mean_basis_type in ["gaussian", "spline", "interpolation"]
         assert bias_basis_type in ["gaussian", "spline"]
         
         self.data_dict           = data_dict
