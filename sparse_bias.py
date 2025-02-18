@@ -32,10 +32,11 @@ class BiasModel:
         self.basis       = None
         self.stan_data   = 1
 
-    def fit(self, n_warmup=2000, n_sample=2500):
+    def fit(self, n_warmup=2000, n_sample=2500, **kwargs):
         self.fit = self.model.sample(data=self.data_dict,
                                      iter_warmup   = n_warmup, 
-                                     iter_sampling = n_sample)      
+                                     iter_sampling = n_sample,
+                                     **kwargs)      
     def check_data(self):
         if self.model in models_req_corr:
             assert "corr"           in self.data_dict.keys(), self.model + " requires a Correlation matrix with the dict key corr"

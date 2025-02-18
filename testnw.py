@@ -31,12 +31,12 @@ def make_measurement(xmin, xmax, N_obs, relative_unc):
 
 seed = 1
 # N_exp = 2
-x_range = (1e-5,10)
-x_eval = np.logspace(*x_range, 30)
+x_range = np.log10((1e-5,10))
+x_eval = np.logspace(*x_range, 10)
 
-x_obs1, y_obs1, y_obs1_unc = make_measurement(2e-5, 9, 15, 0.1) 
-x_obs2, y_obs2, y_obs2_unc = make_measurement(1e-1, 9, 10, 0.05) 
-x_obs3, y_obs3, y_obs3_unc = make_measurement(1e-3, 2, 20, 0.07) 
+x_obs1, y_obs1, y_obs1_unc = make_measurement(2e-5, 9, 5, 0.1) 
+x_obs2, y_obs2, y_obs2_unc = make_measurement(1e-1, 9, 5, 0.05) 
+x_obs3, y_obs3, y_obs3_unc = make_measurement(1e-3, 2, 5, 0.07) 
 
 nd1 = {'energy'     : x_obs1,
        'expt_val'     : y_obs1,
@@ -84,11 +84,11 @@ basis_obj.generate_mean_bases(X_grid=x_eval,centers=centers, widths=width)
 
 # Gaussian bases for the bias
 centers  = [
-    np.linspace(minE, maxE, 50), 
-    np.linspace(minE, maxE, 25),
-    np.linspace(minE, maxE, 10)
+    np.linspace(minE, maxE, 10), 
+    np.linspace(minE, maxE, 5),
+    np.linspace(minE, maxE, 1)
 ]
-widths   = [0.05, 0.2, 0.5]
+widths   = [0.1, 0.5, 1.0]
 basis_obj.generate_bias_bases(centers=centers, widths=widths)
 
 ############
@@ -96,15 +96,30 @@ basis_obj.generate_bias_bases(centers=centers, widths=widths)
 # Convert to a dict in the format for stan
 #
 stan_data    = convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5)
-with open("/Users/nwalton/Software/sparse_bias/stan_files/inp.json", "w") as f:
-    json.dump(stan_data, f)#json.dump(stan_data, "/Users/nwalton/Software/sparse_bias/stan_files/inp.json")
+# with open("/Users/nwalton/Software/sparse_bias/stan_files/inp.json", "w") as f:
+#     json.dump(stan_data, f)#json.dump(stan_data, "/Users/nwalton/Software/sparse_bias/stan_files/inp.json")
+# print(stan_data)
 
 ############
 #
-# Build Sparse Bias Model,,  !! For me, cmdstanpy is not working, can't compile model using the python interface yet
+# Build Sparse Bias Model
 #
-# sbmod = BiasModel(stan_data, basis_obj, model_name = "interpolation_horseshoe_corr")
+sbmod = BiasModel(stan_data, basis_obj, model_name = "interpolation_horseshoe_corr")
 
 # fit
-# sbmod.fit()
+sbmod.fit(n_warmup=2000, n_sample=2500, show_console=False)
+
+# from cmdstanpy   import diagnose
+# diagnose(sbmod.model)
+
 # %%
+
+
+# plt.figure()
+# plt.errorbar(x_obs1, y_obs1, yerr=y_obs1_unc)
+# plt.errorbar(x_obs2, y_obs2, yerr=y_obs2_unc)
+# plt.errorbar(x_obs3, y_obs3, yerr=y_obs3_unc)
+
+# # plt.plot(np.concatenate([x_obs1, x_obs2, x_obs3]), basis_obj.mean_basis_matrix@maxwellian(1.5, x_eval), 'g.')
+# plt.plot(x_eval, maxwellian(1.5, x_eval))
+# plt.show()

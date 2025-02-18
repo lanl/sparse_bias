@@ -62,7 +62,20 @@ transformed parameters{
   }
 }
 model {
-  beta_mean  ~ normal(0, 10.);
+  for (i in 1:n_levels) {
+    gamma_tilde_s[i] ~ normal(0, 1);
+    gamma_tilde_m[i] ~ normal(0, 1);
+    gamma_tilde_l[i] ~ normal(0, 1);
+    lambda_s[i]     ~ cauchy(0, 1);
+    lambda_m[i]     ~ cauchy(0, 1);
+    lambda_l[i]     ~ cauchy(0, 1);
+  }
+
+  tau_s ~ normal(0, 1);
+  tau_m ~ normal(0, 1);
+  tau_l ~ normal(0, 1);
+
+  beta_mean  ~ normal(0, 1.);
 
   for (i in 1:n_datascales) {
     data_scale[i] ~ normal(1,0.01);
