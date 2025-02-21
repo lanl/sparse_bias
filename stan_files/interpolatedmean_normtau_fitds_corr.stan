@@ -81,7 +81,7 @@ model {
   tau_m ~ normal(0, 1);
   tau_l ~ normal(0, 1);
   
-  sigma  ~ normal(0, 1.);
+  sigma  ~ normal(0, 5.);
 
   for (i in 1:n_datascales) {
     data_scale[i] ~ normal(1,0.01);

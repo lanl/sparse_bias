@@ -37,6 +37,7 @@ parameters {
 }
 transformed parameters{
   vector<lower=0.>[nbases_mean] sigma;   
+  vector[n_datascales] ds; 
   vector[n_observations]           mu;
   vector[n_observations] mu_corrected;
   
@@ -45,6 +46,8 @@ transformed parameters{
   array[n_levels] vector[nbases_l] gamma_l;
 
   sigma = beta_mean;
+  ds = log(data_scale);
+
   for (i in 1:n_levels){
     gamma_s[i] = gamma_tilde_s[i] .* lambda_s[i] * tau_scale * tau_s;
     gamma_m[i] = gamma_tilde_m[i] .* lambda_m[i] * tau_scale * tau_m;
@@ -57,8 +60,8 @@ transformed parameters{
   for (i in 1:n_levels) {
     mu_corrected = mu_corrected .* exp( (B_s * gamma_s[i] + B_m * gamma_m[i] + B_l * gamma_l[i]) .* levels_mask[,i] );
   }
-  for (i in 1:n_levels) {
-    mu_corrected = mu_corrected .* (data_scale[i] * datascale_mask[,i]);
+  for (i in 1:n_datascales) {
+    mu_corrected = mu_corrected .* exp(ds[i] .* datascale_mask[,i]); // Can we exponetiate the data scale to make the mask work?
   }
 }
 model {
@@ -75,10 +78,10 @@ model {
   tau_m ~ normal(0, 1);
   tau_l ~ normal(0, 1);
 
-  beta_mean  ~ normal(0, 1.);
+  beta_mean  ~ normal(0, 100.); // How can we soften the prior shape to account for model imperfections?
 
   for (i in 1:n_datascales) {
-    data_scale[i] ~ normal(1,0.01);
+    data_scale[i] ~ normal(1, 0.01);
   }
   
   y ~ normal(mu_corrected, abs(s .* mu + 1.e-10));
