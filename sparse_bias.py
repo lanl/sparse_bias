@@ -79,33 +79,57 @@ class BasisModel:
         self.n_mean_bases = self.mean_basis_matrix.shape[1]
 
     def generate_bias_bases(self, *args, **kwargs):
+
+        bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l = self._generate_bias_bases(*args, **kwargs)
+
+        self.bias_basis_matrix_s = bias_basis_matrix_s
+        self.bias_basis_matrix_m = bias_basis_matrix_m
+        self.bias_basis_matrix_l = bias_basis_matrix_l
+
+        self.n_bases_s = self.bias_basis_matrix_s.shape[1]
+        self.n_bases_m = self.bias_basis_matrix_m.shape[1]
+        self.n_bases_l = self.bias_basis_matrix_l.shape[1]
+
+    def _generate_bias_bases(self, **kwargs):
+         ### option to pass fine grid for plotting
+        if 'energy_grid' in kwargs.keys():
+            X_log = np.log10(kwargs['energy_grid'])
+        else:
+            X_log = np.log10(self.data_dict["X"])
+
         if self.bias_basis_type == "gaussian":
             o_inds = np.argsort(kwargs["widths"])
             widths  = [kwargs["widths"][i]  for i in o_inds]
             centers = [kwargs["centers"][i] for i in o_inds]
-            self.bias_basis_matrix_s = gaussian_basis_matrix(X           = self.data_dict["X"],
+            bias_basis_matrix_s = gaussian_basis_matrix(X           = X_log,
                                                              basis_loc   = centers[0],
                                                              basis_scale = widths[0])
-            self.bias_basis_matrix_m = gaussian_basis_matrix(X           = self.data_dict["X"], 
+            bias_basis_matrix_m = gaussian_basis_matrix(X           = X_log, 
                                                              basis_loc   = centers[1],
                                                              basis_scale = widths[1])
-            self.bias_basis_matrix_l = gaussian_basis_matrix(X           = self.data_dict["X"],
+            bias_basis_matrix_l = gaussian_basis_matrix(X           = X_log,
                                                              basis_loc   = centers[2],
                                                              basis_scale = widths[2])
         elif self.bias_basis_type == "spline":
             sort_n_bases = np.argsort([len(x) for x in kwargs["knots"]])
             knots = kwargs["knots"][sort_n_bases]
-            self.bias_basis_matrix_s = spline_basis_matrix(X           = self.data_dict["X"],
+            bias_basis_matrix_s = spline_basis_matrix(X           = X_log,
                                                            basis_loc   = knots[0],
                                                            basis_order = kwargs["basis_order"])
-            self.bias_basis_matrix_m = spline_basis_matrix(X           = self.data_dict["X"],
+            bias_basis_matrix_m = spline_basis_matrix(X           = X_log,
                                                            basis_loc   = knots[1],
                                                            basis_order = kwargs["basis_order"])
-            self.bias_basis_matrix_l = spline_basis_matrix(X           = self.data_dict["X"],
+            bias_basis_matrix_l = spline_basis_matrix(X           = X_log,
                                                            basis_loc   = knots[2],
                                                            basis_order = kwargs["basis_order"])
         else:
             print("Invalid bias basis type " + self.bias_basis_type)
-        self.n_bases_s = self.bias_basis_matrix_s.shape[1]
-        self.n_bases_m = self.bias_basis_matrix_m.shape[1]
-        self.n_bases_l = self.bias_basis_matrix_l.shape[1]
+
+        return bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l
+
+
+    def get_plotable_bias_bases(self, grid, *args, **kwargs):
+        
+        bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l = self._generate_bias_bases(energy_grid=grid, *args, **kwargs)
+        
+        return bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l

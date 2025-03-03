@@ -23,3 +23,6 @@ def read_output(samples, n_bases, n_levels, tau_scale, isamples):
     gamma_l   = gamma_tilde_l * lambda_l * tau_scale * tau_l[:, None]
 
     return sigma, datascales, [gamma_l, gamma_m, gamma_s]
+
+
+# def get_plotable_bias_bases
