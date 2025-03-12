@@ -38,7 +38,7 @@ class BiasModel:
                                      iter_sampling = n_sample,
                                      **kwargs)      
     def check_data(self):
-        if self.model in models_req_corr:
+        if self.model in models_with_corr:
             assert "corr"           in self.data_dict.keys(), self.model + " requires a Correlation matrix with the dict key corr"
         if self.model in models_with_ds:
             assert "datascale_mask" in self.data_dict.keys(), self.model + " requires a mask to identify which data are scaled together"
@@ -91,7 +91,7 @@ class BasisModel:
         self.n_bases_l = self.bias_basis_matrix_l.shape[1]
 
     def _generate_bias_bases(self, **kwargs):
-         ### option to pass fine grid for plotting
+        ### option to pass fine grid for plotting
         if 'energy_grid' in kwargs.keys():
             X_log = np.log10(kwargs['energy_grid'])
         else:
