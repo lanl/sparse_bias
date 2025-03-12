@@ -92,8 +92,8 @@ class BasisModel:
 
     def _generate_bias_bases(self, **kwargs):
         ### option to pass fine grid for plotting
-        if 'energy_grid' in kwargs.keys():
-            X_log = np.log10(kwargs['energy_grid'])
+        if 'grid' in kwargs.keys():
+            X_log = np.log10(kwargs['grid'])
         else:
             X_log = np.log10(self.data_dict["X"])
 
@@ -130,6 +130,6 @@ class BasisModel:
 
     def get_plotable_bias_bases(self, grid, *args, **kwargs):
         
-        bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l = self._generate_bias_bases(energy_grid=grid, *args, **kwargs)
+        bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l = self._generate_bias_bases(grid=grid, *args, **kwargs)
         
         return bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l
