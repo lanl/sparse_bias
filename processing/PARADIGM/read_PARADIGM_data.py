@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.linalg import block_diag
 import os
 from copy import copy
-
+from utils.functions import get_scale_factor
 
 
 class Experiment:
@@ -48,15 +48,7 @@ class Experiment:
             
         self.attributes = {key: val for key,
                             val in self.attributes.items() if key in attributes_of_interest}
-
-    
-    # def rescale_data_to_eval(self, Eout_eval, PFNS_eval):
-    #     Eout_exp = np.array(self.nuclear_data_df["E (MeV)"])
-    #     PFNS_exp = np.array(self.nuclear_data_df["PFNS"])
-    #     scaling_factor = get_PFNS_scaling_factor_from_eval(Eout_exp, PFNS_exp, Eout_eval, PFNS_eval)
-    #     self.nuclear_data_df["PFNS"] = self.nuclear_data_df["PFNS"]*scaling_factor
-
-
+        
     def get_nuclear_data(self) -> pd.DataFrame:
 
         ### Try to read wtf kind of data
@@ -99,13 +91,15 @@ class Experiment:
         elif self.data['units']['uncertainty'] == "absolute":
             rel_unc = np.array(self.data['uncertainties'])/cs
 
+        corr = np.reshape(self.data['correlations'], (len(self.data['values']),len(self.data['values'])))
+
         nuclear_data = {
             "energy"        : Ein,
             "expt_val"      : cs,
             "rel_unc"       : rel_unc,
             "expt_label"    : self.title,
             "scale_flag"    : rflag,
-            "corr"          : np.eye(len(Ein)) ## need to update this
+            "corr"          : corr ## need to update this
         }
     
         self.nuclear_data = nuclear_data
@@ -156,7 +150,7 @@ def build_feature_map(exp_object_list: list,
     return feat_df, data_dict_list
 
 
-def compile_nd_dfs(data_dict_list, xminmax=[None, None]):
+def compile_nd_dfs(data_dict_list, xminmax=[None, None], scale_to=[None, None]):
 
     check_data_dict_list(data_dict_list)
 
@@ -164,12 +158,22 @@ def compile_nd_dfs(data_dict_list, xminmax=[None, None]):
     dataCorr = block_diag(*[x["corr"] for x in data_dict_list])
     
     # setup all df from list of data dicts
-    nd_dfs   = [pd.DataFrame({"energy"      : data_dict["energy"], 
-                          "expt_val"      : data_dict["expt_val"], 
+    nd_dfs   = []
+    for data_dict in data_dict_list:
+        if scale_to[0] is None or data_dict["scale_flag"] == 0:
+            expt_val = data_dict["expt_val"] 
+        elif data_dict["scale_flag"] == 1:
+            ds = get_scale_factor(data_dict["energy"], data_dict["expt_val"] , scale_to[0], scale_to[1])
+            expt_val = data_dict["expt_val"] * ds
+            
+        df = pd.DataFrame({"energy"      : data_dict["energy"], 
+                          "expt_val"     : expt_val, 
                           "rel_unc"     : data_dict["rel_unc"], 
                           "expt_label"  : np.repeat(data_dict["expt_label"],data_dict["expt_val"].size), 
                           "bias_label"  : [data_dict["bias_label"] for i in range(data_dict["expt_val"].size)],
-                          "scale_flag"  : data_dict["scale_flag"]})                                   for data_dict in data_dict_list]
+                          "scale_flag"  : data_dict["scale_flag"]})
+        nd_dfs.append(df)
+
     all_df = pd.concat(nd_dfs)
     all_df = all_df.reset_index().drop("index", axis=1)
 
