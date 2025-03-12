@@ -54,3 +54,36 @@ def interpolation_matrix(X: np.ndarray, basis_loc: np.ndarray) -> np.ndarray:
     return D
     
 
+
+
+from scipy.interpolate import griddata
+
+def get_scale_factor(Xexp, Yexp, Xmod, Ymod):
+        DMod_int = np.array(griddata(Xmod, Ymod, Xexp))
+        n1 = 0; n2 = 0
+        for index1 in range(0,len(Yexp)-1):
+            n1 = n1+ 0.5*(DMod_int[index1]+DMod_int[index1+1]) * (Xexp[index1+1]-Xexp[index1])
+            n2 = n2+0.5*(Yexp[index1]+Yexp[index1+1])*(Xexp[index1+1]-Xexp[index1])
+        return n1/n2
+
+def get_interpolation_matrix(E_obs, 
+                             E_grid):
+    # Decision: dropping anything outside of the theory curve energy range (keeping D at 0 for those indices)
+    n_obs  = E_obs.size
+    n_grid = E_grid.size
+    
+    D = np.zeros([n_obs, n_grid])
+    for ii in range(n_obs):
+        
+        upper_ind_check = np.where(E_obs[ii] <= E_grid)[0]
+       
+        if len(upper_ind_check) > 0:
+            upper_ind = upper_ind_check[0]
+            lower_ind = upper_ind - 1
+           
+            if not (lower_ind == -1 and upper_ind == 0): 
+                weight    = (E_obs[ii] - E_grid[lower_ind]) / (E_grid[upper_ind] - E_grid[lower_ind])
+
+                D[ii, upper_ind] = weight
+                D[ii, lower_ind] = 1 - weight
+    return D
