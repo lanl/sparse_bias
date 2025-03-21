@@ -39,7 +39,7 @@ def compile_data_dicts(data_dict_list, xminmax=[None, None], scale_to=[None, Non
         if scale_to[0] is None or data_dict["scale_flag"] == 0:
             expt_val = data_dict["expt_value"] 
         elif data_dict["scale_flag"] == 1:
-            ds = get_scale_factor(data_dict["energy"], data_dict["expt_value"] , scale_to[0], scale_to[1])
+            ds = get_scale_factor(data_dict["X"], data_dict["expt_value"] , scale_to[0], scale_to[1])
             expt_val = data_dict["expt_value"] * ds
         else:
             raise ValueError()
