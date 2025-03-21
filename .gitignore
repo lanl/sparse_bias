@@ -1,0 +1,5 @@
+.ipynb_check*
+*.pyc
+__pycache__/
+test_runDIR/*
+.DS_store
