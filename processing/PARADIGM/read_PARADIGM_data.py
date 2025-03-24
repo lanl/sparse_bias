@@ -219,3 +219,14 @@ def convert_to_data_dict(data_df, dataCorr):
         "X"             : data_df["energy"].values,
         "corr"          : dataCorr}
     return data_dict
+
+def convert_to_general_dict(data_dict):
+    data_dict_new = {
+        "bias_label"    : data_dict["bias_label"],
+        "expt_label"    : data_dict["expt_label"],
+        "scale_flag"    : data_dict["scale_flag"],
+        "expt_value"    : data_dict["expt_val"],
+        "rel_unc"       : data_dict["rel_unc"],
+        "X"             : data_dict["energy"],
+        "corr"          : data_dict['corr']}
+    return data_dict_new
