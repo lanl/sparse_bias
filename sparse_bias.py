@@ -31,6 +31,7 @@ class BiasModel:
         self.features    = None
         self.basis       = None
         self.stan_data   = 1
+        self.output      = None
 
     def fit(self, n_warmup=2000, n_sample=2500, **kwargs):
         self.output = self.model.sample(data=self.data_dict,
@@ -60,9 +61,14 @@ class BasisModel:
         self.mean_basis_matrix   = None
         self.bias_basis_matrix_s = None      
         self.bias_basis_matrix_m = None      
-        self.bias_basis_matrix_l = None      
+        self.bias_basis_matrix_l = None   
+        self.saved_bias_bases_kwargs = {}   
+        self.saved_mean_bases_kwargs = {}
         
     def generate_mean_bases(self, *args, **kwargs):
+
+        self.saved_mean_bases_kwargs.update(kwargs)
+
         if self.mean_basis_type == "gaussian":
             self.mean_basis_matrix = gaussian_basis_matrix(X           = self.data_dict["X"], 
                                                            basis_loc   = kwargs["centers"], 
@@ -80,6 +86,8 @@ class BasisModel:
 
     def generate_bias_bases(self, *args, **kwargs):
 
+        self.saved_bias_bases_kwargs.update(kwargs)
+        
         bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l = self._generate_bias_bases(*args, **kwargs)
 
         self.bias_basis_matrix_s = bias_basis_matrix_s
@@ -128,8 +136,8 @@ class BasisModel:
         return bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l
 
 
-    def get_plotable_bias_bases(self, grid, *args, **kwargs):
+    def get_plotable_bias_bases(self, grid):
         
-        bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l = self._generate_bias_bases(grid=grid, *args, **kwargs)
+        bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l = self._generate_bias_bases(grid=grid, **self.saved_bias_bases_kwargs)
         
         return bias_basis_matrix_s, bias_basis_matrix_m, bias_basis_matrix_l
