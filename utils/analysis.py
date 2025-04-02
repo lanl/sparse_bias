@@ -163,3 +163,54 @@ class BiasAnalysis:
         axes[1].set_ylabel("Bias")
 
         return fig
+    
+    def get_ilevel_figure_qs(self, ilevel, Nqs=100):
+
+        if self.dataframe_plot is None:
+            raise ValueError("Plotable attributes have not been compiled, please run BiasAnalysis.compile_plotable_attributes()")
+
+        # for ilevel get experimental model and delta
+        delta_exp = get_delta_for_level(ilevel, self.B_s, self.B_m, self.B_l, self.gamma_s, self.gamma_m, self.gamma_l)
+        exp_model_level = get_corrected_model_for_level(ilevel, self.levels_mask, self.exp_model, delta_exp)
+
+        # for ilevel get plotable delta
+        delta_plot = get_delta_for_level(ilevel, self.B_s_plot, self.B_m_plot, self.B_l_plot, self.gamma_s, self.gamma_m, self.gamma_l)
+
+        # filter to level and sort
+        x = self.dataframe_plot["X"].values[self.levels_mask[:,ilevel].astype(bool)]
+        exp_model_level = exp_model_level[self.levels_mask[:,ilevel].astype(bool),:]
+
+        isort = np.argsort(x)
+        x = x[isort]
+        exp_model_level = exp_model_level[isort,:]
+
+
+        fig, axes = plt.subplots(2,1, figsize=(8,5), sharex=True, height_ratios=[3,1])
+
+        _ = axes[0].plot(self.BasisModel.saved_mean_bases_kwargs['X_grid'], np.mean(self.sigma,axis=0), alpha=1.0, color='k', label="Model", zorder=5)
+        _ = axes[0].plot(x, np.mean(exp_model_level, axis=1), 'b', label="Bias Model", alpha=1.0)
+
+        active_exp = self.dataframe_plot[self.levels_mask[:,ilevel]==1]
+        _ = axes[0].errorbar( active_exp["X"],  active_exp["expt_value"], yerr=active_exp["expt_value"]*active_exp["rel_unc"], label=np.unique(active_exp['expt_label']), fmt='.', color="b")
+
+        inactive_exp = self.dataframe_plot[self.levels_mask[:,ilevel]==0]
+        _ = axes[0].errorbar( inactive_exp["X"],  inactive_exp["expt_value"], yerr=inactive_exp["expt_value"]*inactive_exp["rel_unc"], fmt='.', color="k", alpha=0.1)
+
+        # plt.plot(theo_E, np.mean(sigma,axis=0), alpha=1.0, color='b', zorder=5)
+        # axes[0].set_xlim(10**minX, 10**maxX)
+        # axes[0].set_ylim(1e0, 5)
+        axes[0].set_xscale('log')
+        axes[0].set_yscale('log') 
+        # axes[0].set_ylabel("(n,f) cross section")
+        axes[0].legend()
+
+
+        quantiles = np.quantile(delta_plot, q=np.linspace(0,1,Nqs), axis=1)
+        _= axes[1].plot(self.plot_x, np.exp(quantiles).T, 'b', alpha=0.1)
+        ydev = 1.1 * np.max(np.abs(1- np.array(axes[1].get_ylim())))
+        axes[1].axhline(y=1.0, color='k')
+        # axes[1].set_xlim(10**minE, 10**maxE)
+        axes[1].set_ylim(1-ydev, 1+ydev)
+        axes[1].set_ylabel("Bias")
+
+        return fig
