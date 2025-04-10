@@ -1,8 +1,8 @@
 # Sparse Bias
 
-# THIS IS CURRENTLY NONFUNCTIONING. WILL GET IT WORKING SOON.
-
-Package for applying the sparse bias modeling techniques to data more general than the AIACHNE case
+Package for applying the sparse bias modeling techniques to functional data. 
+Originally built for estimating nuclear data as part of the AIACHNE project.
+Generalized for wider use.
 
 ## Placeholder Readme for documentation
 
