@@ -58,6 +58,31 @@ def broadcast_scalar_values(val, size):
 
 
 def compile_data_dicts(data_dict_list, xminmax=[None, None], scale_to=[None, None]):
+    """
+    A general utility function to combine data dictionaries constructed for individual experiments into a single data dictionary.
+    This function performs the following actions:
+
+    1. Broadcasts scalar values (such as bias_label or scale_flag) to match the size of the other fields
+    2. Concatenates the fields of each individual dataset into a single dictionary
+    3. Checks data and converts to proper types
+    4. OPTIONAL: Truncates data based on a min and max value for X
+    5. OPTIONAL: Rescales the data (if scale_flag==1) to some nominal provided value. The prior on the scaling is a tight distribution around 1.0, so if the datasets are on wildly different scales then they should be rescaled/normalized to a common value first.
+
+    As a part of operation 2, it will also properly handle the correlation matrices, though if you have correlations between data set dicts these will need to be added afterwards.
+
+    Args:
+        data_dict_list (list[dict]): List of single-experiment data dictionaries.
+        xminmax (list, optional): Minimum and maximum x-values [minX, maxX] to which experimental data will be truncated. Defaults to [None, None].
+        scale_to (list, optional): X,Y values [x, y] used to normalize all experiments with scale_flag==True. Defaults to [None, None].
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        dict: Compiled data dictionary describing all provided experiments.
+    """
+
+    # TODO: put in a catch if data with the same expt_label have different scale_flags
 
     check_data_dict_list(data_dict_list)
     
