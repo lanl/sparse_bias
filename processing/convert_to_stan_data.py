@@ -1,13 +1,13 @@
 import numpy  as np
 import pandas as pd
 
-def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):    
+def convert_to_stan_data(basis_obj, tau_scale=1.e-5, xminmax=None):    
     
-    n_obs      = len(data_dict["expt_value"])
+    n_obs      = len(basis_obj.data_dict["expt_value"])
     
-    n_levels, level_mask = get_level_mask(n_obs, data_dict["bias_label"])
+    n_levels, level_mask = get_level_mask(n_obs, basis_obj.data_dict["bias_label"])
 
-    n_scales, scale_mask = get_datascale_mask(n_obs, data_dict["expt_label"], data_dict["scale_flag"])
+    n_scales, scale_mask = get_datascale_mask(n_obs, basis_obj.data_dict["expt_label"], basis_obj.data_dict["scale_flag"])
     
     all_dict = {
         "n_observations":                        n_obs,
@@ -24,9 +24,9 @@ def convert_to_stan_data(data_dict, basis_obj, tau_scale=1.e-5, xminmax=None):
         "B_l":           basis_obj.bias_basis_matrix_l.tolist(),
         "levels_mask":                      level_mask.tolist(),
         "datascale_mask":                   scale_mask.tolist(),
-        "Corr":                      data_dict["corr"].tolist(),
-        "y":                   data_dict["expt_value"].tolist(),
-        "s":                      data_dict["rel_unc"].tolist()}
+        "Corr":                      basis_obj.data_dict["corr"].tolist(),
+        "y":                   basis_obj.data_dict["expt_value"].tolist(),
+        "s":                      basis_obj.data_dict["rel_unc"].tolist()}
     
     return all_dict
 
