@@ -3,3 +3,6 @@
 __pycache__/
 test_runDIR/*
 .DS_store
+
+## for example
+stanout/
