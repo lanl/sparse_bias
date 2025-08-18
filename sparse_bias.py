@@ -3,6 +3,7 @@ import numpy as np
 from cmdstanpy   import CmdStanModel
 from stan_files  import get_stan_model
 from utils       import gaussian_basis_matrix, spline_basis_matrix, interpolation_matrix
+from processing  import convert_to_stan_data
 
 models_with_corr = ["interpolation_horseshoe_corr",
                     "maxwellian_horseshoe", 
@@ -17,13 +18,14 @@ models_with_ds   = ["gls_horseshoe_datascaling",
                     "maxwellian_horseshoe"] 
 
 class BiasModel:
-    def __init__(self, data_dict, basis_model,
-                 model_name = "interpolation_horseshoe_corr"
+    def __init__(self, basis_model,
+                 model_name = "interpolation_horseshoe_corr",
+                 tau_scale=1.e-6,
                 ):
         assert basis_model.mean_basis_type in ["gaussian", "spline", "interpolation"]
         assert basis_model.bias_basis_type in ["gaussian", "spline"]
         
-        self.data_dict   = data_dict
+        self.data_dict   = convert_to_stan_data(basis_model, tau_scale=tau_scale)  
         self.basis_model = basis_model
         self.model_name  = model_name
         self.model       = CmdStanModel(stan_file=get_stan_model(model_name))

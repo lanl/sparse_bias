@@ -78,9 +78,24 @@ def get_bias_L2norm_per_level(n_levels, B_s, B_m, B_l, gamma_s, gamma_m, gamma_l
 
 
 #%% handler class 
-
 import matplotlib.pyplot as plt
 
+### under the hood functions
+def plot_active_inactive(axis, active_exp, inactive_exp, label_data=False):
+        _ = axis.errorbar( inactive_exp["X"],  inactive_exp["expt_value"], yerr=inactive_exp["expt_value"]*inactive_exp["rel_unc"], fmt='.', color="k", alpha=0.1)
+        if label_data:
+            _ = axis.errorbar( active_exp["X"],  active_exp["expt_value"], yerr=active_exp["expt_value"]*active_exp["rel_unc"], label=np.unique(active_exp['expt_label']), fmt='.', color="b")
+        else:
+            _ = axis.errorbar( active_exp["X"],  active_exp["expt_value"], yerr=active_exp["expt_value"]*active_exp["rel_unc"], fmt='.', color="b")
+def plot_bias(axis, plot_x, delta_plot, Nqs=None):
+    if Nqs is None:
+        _= axis.plot(plot_x, np.exp(delta_plot), 'b', alpha=0.1)
+    else:
+        quantiles = np.quantile(delta_plot, q=np.linspace(0,1,Nqs), axis=1)
+        _= axis.plot(plot_x, np.exp(quantiles).T, 'b', alpha=0.1)
+
+
+### ANALYSIS CLASS
 class BiasAnalysis:
 
     def __init__(self, BiasModel):
@@ -101,6 +116,17 @@ class BiasAnalysis:
         # get experimental model 
         self.exp_model = get_scaled_model(self.B, self.sigma, self.datascales, self.datascale_mask)
 
+    def get_ilevel_bias_label(self, ilevel):
+        level_indices = np.argwhere(np.array(self.BiasModel.data_dict['levels_mask'])[:, ilevel]).flatten()
+        try:
+            label = np.unique([v for i,v in enumerate(self.BasisModel.data_dict['bias_label']) if i in level_indices and not isinstance(v,list)]).item()
+        except:
+            try:
+                label = np.unique([v for i,v in enumerate(self.BasisModel.data_dict['bias_label']) if i in level_indices])
+            except:
+                label='Label Error'
+
+        return label
 
     def count_terms_beyond_threshold_per_level(self, quantile = 0.8, threshold = 1e-4):
         return get_count_beyond_threshold_per_level(self.n_levels, self.gamma_s, self.gamma_m, self.gamma_l, quantile, threshold)
@@ -114,7 +140,8 @@ class BiasAnalysis:
         self.B_s_plot, self.B_m_plot, self.B_l_plot = self.BasisModel.get_plotable_bias_bases(plot_x)
         self.dataframe_plot = pd.DataFrame({k: self.BasisModel.data_dict[k] for k in ['X', 'expt_value', 'rel_unc', 'expt_label', 'bias_label', 'scale_flag']})
 
-    def get_ilevel_figure(self, ilevel):
+
+    def get_ilevel_figure(self, ilevel, label_data=False, Nqs=None, feature=None):
 
         if self.dataframe_plot is None:
             raise ValueError("Plotable attributes have not been compiled, please run BiasAnalysis.compile_plotable_attributes()")
@@ -126,91 +153,36 @@ class BiasAnalysis:
         # for ilevel get plotable delta
         delta_plot = get_delta_for_level(ilevel, self.B_s_plot, self.B_m_plot, self.B_l_plot, self.gamma_s, self.gamma_m, self.gamma_l)
 
-        # filter to level and sort
+        # filter to level
         x = self.dataframe_plot["X"].values[self.levels_mask[:,ilevel].astype(bool)]
         exp_model_level = exp_model_level[self.levels_mask[:,ilevel].astype(bool),:]
 
+        # sort
         isort = np.argsort(x)
         x = x[isort]
         exp_model_level = exp_model_level[isort,:]
 
-
+        # make figure
         fig, axes = plt.subplots(2,1, figsize=(8,5), sharex=True, height_ratios=[3,1])
 
         _ = axes[0].plot(self.BasisModel.saved_mean_bases_kwargs['X_grid'], np.mean(self.sigma,axis=0), alpha=1.0, color='k', label="Model", zorder=5)
         _ = axes[0].plot(x, np.mean(exp_model_level, axis=1), 'b', label="Bias Model", alpha=1.0)
 
-        active_exp = self.dataframe_plot[self.levels_mask[:,ilevel]==1]
-        _ = axes[0].errorbar( active_exp["X"],  active_exp["expt_value"], yerr=active_exp["expt_value"]*active_exp["rel_unc"], label=np.unique(active_exp['expt_label']), fmt='.', color="b")
-
-        inactive_exp = self.dataframe_plot[self.levels_mask[:,ilevel]==0]
-        _ = axes[0].errorbar( inactive_exp["X"],  inactive_exp["expt_value"], yerr=inactive_exp["expt_value"]*inactive_exp["rel_unc"], fmt='.', color="k", alpha=0.1)
-
-        # plt.plot(theo_E, np.mean(sigma,axis=0), alpha=1.0, color='b', zorder=5)
-        # axes[0].set_xlim(10**minX, 10**maxX)
-        # axes[0].set_ylim(1e0, 5)
-        axes[0].set_xscale('log')
-        axes[0].set_yscale('log') 
-        # axes[0].set_ylabel("(n,f) cross section")
+        plot_active_inactive(axes[0], self.dataframe_plot[self.levels_mask[:,ilevel]==1], self.dataframe_plot[self.levels_mask[:,ilevel]==0], label_data=label_data)
+        axes[0].set_xscale('log'); axes[0].set_yscale('log') 
         axes[0].legend()
-
-
-        _= axes[1].plot(self.plot_x, np.exp(delta_plot), 'b', alpha=0.1)
+        
+        plot_bias(axes[1], self.plot_x, delta_plot, Nqs=Nqs)
         ydev = 1.1 * np.max(np.abs(1- np.array(axes[1].get_ylim())))
         axes[1].axhline(y=1.0, color='k')
-        # axes[1].set_xlim(10**minE, 10**maxE)
         axes[1].set_ylim(1-ydev, 1+ydev)
         axes[1].set_ylabel("Bias")
+
+        if feature is None:
+            fig.suptitle(f"Level: {self.get_ilevel_bias_label(ilevel)}")
+        else:
+            fig.suptitle(f"Feature: {feature} \nLevel: {self.get_ilevel_bias_label(ilevel)}")
 
         return fig
     
-    def get_ilevel_figure_qs(self, ilevel, Nqs=100):
-
-        if self.dataframe_plot is None:
-            raise ValueError("Plotable attributes have not been compiled, please run BiasAnalysis.compile_plotable_attributes()")
-
-        # for ilevel get experimental model and delta
-        delta_exp = get_delta_for_level(ilevel, self.B_s, self.B_m, self.B_l, self.gamma_s, self.gamma_m, self.gamma_l)
-        exp_model_level = get_corrected_model_for_level(ilevel, self.levels_mask, self.exp_model, delta_exp)
-
-        # for ilevel get plotable delta
-        delta_plot = get_delta_for_level(ilevel, self.B_s_plot, self.B_m_plot, self.B_l_plot, self.gamma_s, self.gamma_m, self.gamma_l)
-
-        # filter to level and sort
-        x = self.dataframe_plot["X"].values[self.levels_mask[:,ilevel].astype(bool)]
-        exp_model_level = exp_model_level[self.levels_mask[:,ilevel].astype(bool),:]
-
-        isort = np.argsort(x)
-        x = x[isort]
-        exp_model_level = exp_model_level[isort,:]
-
-
-        fig, axes = plt.subplots(2,1, figsize=(8,5), sharex=True, height_ratios=[3,1])
-
-        _ = axes[0].plot(self.BasisModel.saved_mean_bases_kwargs['X_grid'], np.mean(self.sigma,axis=0), alpha=1.0, color='k', label="Model", zorder=5)
-        _ = axes[0].plot(x, np.mean(exp_model_level, axis=1), 'b', label="Bias Model", alpha=1.0)
-
-        active_exp = self.dataframe_plot[self.levels_mask[:,ilevel]==1]
-        _ = axes[0].errorbar( active_exp["X"],  active_exp["expt_value"], yerr=active_exp["expt_value"]*active_exp["rel_unc"], label=np.unique(active_exp['expt_label']), fmt='.', color="b")
-
-        inactive_exp = self.dataframe_plot[self.levels_mask[:,ilevel]==0]
-        _ = axes[0].errorbar( inactive_exp["X"],  inactive_exp["expt_value"], yerr=inactive_exp["expt_value"]*inactive_exp["rel_unc"], fmt='.', color="k", alpha=0.1)
-
-        # plt.plot(theo_E, np.mean(sigma,axis=0), alpha=1.0, color='b', zorder=5)
-        # axes[0].set_xlim(10**minX, 10**maxX)
-        # axes[0].set_ylim(1e0, 5)
-        axes[0].set_xscale('log')
-        axes[0].set_yscale('log') 
-        # axes[0].set_ylabel("(n,f) cross section")
-        axes[0].legend()
-
-
-        quantiles = np.quantile(delta_plot, q=np.linspace(0,1,Nqs), axis=1)
-        _= axes[1].plot(self.plot_x, np.exp(quantiles).T, 'b', alpha=0.1)
-        ydev = 1.1 * np.max(np.abs(1- np.array(axes[1].get_ylim())))
-        axes[1].axhline(y=1.0, color='k')
-        # axes[1].set_xlim(10**minE, 10**maxE)
-        axes[1].set_ylim(1-ydev, 1+ydev)
-        axes[1].set_ylabel("Bias")
-
-        return fig
+# %%
