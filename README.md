@@ -42,6 +42,12 @@ For the most reliable setup, it is recommended to **build CmdStan yourself** and
 This is required if using pip. If using conda, this avoids potential issues related to pre-compiled CmdStan modules.
 
 Instructions for building CmdStan and linking it to CmdStanPy can be found at (https://mc-stan.org/cmdstanpy/installation.html).
+Ensure that the CXX and CC compilers used match that of the conda environment in which **CmdStanPy** is installed. 
+The conda compilers can be checked with 
+
+    `env | grep -E '^(CC|CXX|CPPFLAGS|CFLAGS|CXXFLAGS|CPATH|CPLUS_INCLUDE_PATH|SDKROOT)='`
+
+These compiles can be set for the CmdStan build via the make file under .../cmdstan/make/local .
 
 ### License information for (O4946)
 
