@@ -27,12 +27,13 @@ conda activate sparse_bias
 
 Both of these methods will install the necessary dependencies for running the code in this repository. 
 Choose the one that best fits your workflow (Conda for environment management or pip for straightforward package installation).
+Alternatively, the necessary packages can be installed manually as there are only a few, standard python packages required.
 
 ### CmdStan Dependency
 
 This project uses the probabilistic programming language [Stan](https://mc-stan.org/) under the hood, with the [CmdStanPy](https://mc-stan.org/cmdstanpy/) interface for interacting with CmdStan. 
 
-- If you are installing via **Conda**, the underlying **CmdStan** software will be installed automatically. Some issues have been encountered with the conda-built CmdStan due to architecture settings.
+- If you are installing via **Conda**, the underlying **CmdStan** software will be installed automatically. Some issues have been encountered with the conda-built CmdStan due to architecture settings, in which case CmdStan may need to be compiled manually.
 - If you are installing via **Pip**, **CmdStan** is not installed automatically.
 
 #### Recommended Approach
@@ -41,6 +42,12 @@ For the most reliable setup, it is recommended to **build CmdStan yourself** and
 This is required if using pip. If using conda, this avoids potential issues related to pre-compiled CmdStan modules.
 
 Instructions for building CmdStan and linking it to CmdStanPy can be found at (https://mc-stan.org/cmdstanpy/installation.html).
+Ensure that the CXX and CC compilers used match that of the conda environment in which **CmdStanPy** is installed. 
+The conda compilers can be checked with 
+
+    `env | grep -E '^(CC|CXX|CPPFLAGS|CFLAGS|CXXFLAGS|CPATH|CPLUS_INCLUDE_PATH|SDKROOT)='`
+
+These compiles can be set for the CmdStan build via the make file under .../cmdstan/make/local .
 
 ### License information for (O4946)
 
