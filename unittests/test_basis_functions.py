@@ -1,7 +1,7 @@
-# test basis functino generation for mean and biases
+# test basis function generation for mean and biases
 # test user defined basis and some error handling 
 
-
+import numpy as np
 
 bmean = {
     'type'      : 'mean',
