@@ -1,3 +1,4 @@
+import os
 import   json
 import  numpy as np
 import pandas as pd
@@ -25,37 +26,52 @@ from scipy.linalg import block_diag
 #
 
 def read_aiachne_json(fn, bias_category = "Expt_Name"):
-    data_list = []
-    data_json = json.load(open(fn,'r'))
-    for data in data_json:
-        name   = data["attributes"]["Author"][0]+ "_" + data["attributes"]["Year"]
-        data["attributes"]["Expt_Name"] = name
-        
-        values = np.array(data["data"]["values"]).flatten()
-        n_obs  = values.size
-        uncert = np.array(data["data"]["uncertainties"]).flatten()
-        corr   = np.array(data["data"]["correlations"]).reshape([n_obs,n_obs])
-        energy = np.array(data["data"]['structure'][1]["limits"]).flatten()
-        
+    data = json.load(open(fn,'r'))
+    # print(data['attributes']['EXFORnumber'])
+    # name   = data["attributes"]["Author"][0]+ "_" + data["attributes"]["Year"] + "_" + data['attributes']['EXFORnumber']
+
+    name = os.path.basename(fn)
+    data["attributes"]["Expt_Name"] = name
+    
+    values = np.array(data["data"]["values"]).flatten()
+    n_obs  = values.size
+    uncert = np.array(data["data"]["uncertainties"]).flatten()
+    corr   = np.array(data["data"]["correlations"]).reshape([n_obs,n_obs])
+    energy = np.array(data["data"]['structure'][1]["limits"]).flatten()
+    
+    if isinstance(bias_category, str):
         bias_label = data["attributes"][bias_category]
-        drop_inds  = np.where(data["data"]['values'] == 0.)[0]
-        if len(drop_inds) > 0:
-            print(name, drop_inds)
-            values      = np.delete(values,      drop_inds)
-            uncert      = np.delete(uncert,      drop_inds)
-            energy      = np.delete(energy,      drop_inds)
-            bias_label  = np.delete(bias_label,  drop_inds)
-            corr        = np.delete(corr,        drop_inds, axis=0)
-            corr        = np.delete(corr,        drop_inds, axis=1)
+    elif callable(bias_category):
+        bias_label = bias_category(data)
         
-        data_list.append({"n":        values.size,
-                          "energy":        energy, 
-                          "values":        values, 
-                          "rel_unc":       uncert, 
-                          "corr":            corr, 
-                          "name":            name, 
-                          "bias_label":bias_label})
-    return data_list
+    drop_inds  = np.where(np.array(data["data"]['values']) == 0.)[0]
+    if len(drop_inds) > 0:
+        print(name, drop_inds)
+        values      = np.delete(values,      drop_inds)
+        uncert      = np.delete(uncert,      drop_inds)
+        energy      = np.delete(energy,      drop_inds)
+        bias_label  = np.delete(bias_label,  drop_inds)
+        corr        = np.delete(corr,        drop_inds, axis=0)
+        corr        = np.delete(corr,        drop_inds, axis=1)
+    
+    data_dict = {
+                'X'         : energy,
+                'expt_value': values,
+                'rel_unc'   : uncert,
+                'expt_label': name,
+                'bias_label': bias_label,
+                'scale_flag': True,
+                'corr'      : corr,
+                # "n":        values.size,
+                # "energy":        energy, 
+                # "values":        values, 
+                # "rel_unc":       uncert, 
+                # "corr":            corr, 
+                # "name":            name, 
+                # "bias_label":bias_label
+                }
+    
+    return data_dict
     
 def compile_nd_dfs(data_dict_list, xminmax=[None, None]):
 

@@ -43,7 +43,7 @@ def get_level_mask(n_obs, data_dict_bias_label):
     n_levels   = len(levels)
     level_mask = np.zeros([n_obs, n_levels])
     for i, level in enumerate(levels):
-        level_mask[:,i] = [int(level in x) for x in data_dict_bias_label]
+        level_mask[:,i] = [int(level == x) for x in data_dict_bias_label]
     return n_levels, level_mask
 
 def get_unique_values_from_nested_data(data):
@@ -61,7 +61,7 @@ def get_unique_values_from_nested_data(data):
     traverse(data)
     return list(unique_values)
 
-def check_data_dict(data_dict):
+def check_data_dict(data_dict_list):
     required_keys = ['energy','exp_val','rel_unc','expt_label','bias_label','scale_flag','corr']
     for i, data_dict in enumerate(data_dict_list):
         for each in required_keys:
