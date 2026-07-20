@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+from .functions import maxwellian
 
 def read_output(samples, n_bases, n_levels, tau_scale):
     isamples = samples.shape[0]
@@ -81,12 +81,12 @@ def get_bias_L2norm_per_level(n_levels, B_s, B_m, B_l, gamma_s, gamma_m, gamma_l
 import matplotlib.pyplot as plt
 
 ### under the hood functions
-def plot_active_inactive(axis, active_exp, inactive_exp, label_data=False):
-        _ = axis.errorbar( inactive_exp["X"],  inactive_exp["expt_value"], yerr=inactive_exp["expt_value"]*inactive_exp["rel_unc"], fmt='.', color="k", alpha=0.1)
+def plot_active_inactive(axis, active_exp, inactive_exp, label_data=False, multiplication_function = lambda x: 1):
+        _ = axis.errorbar( inactive_exp["X"],  inactive_exp["expt_value"]*multiplication_function(inactive_exp['X']), yerr=inactive_exp["expt_value"]*multiplication_function(inactive_exp['X'])*inactive_exp["rel_unc"], fmt='.', color="k", alpha=0.1)
         if label_data:
-            _ = axis.errorbar( active_exp["X"],  active_exp["expt_value"], yerr=active_exp["expt_value"]*active_exp["rel_unc"], label=np.unique(active_exp['expt_label']), fmt='.', color="b")
+            _ = axis.errorbar( active_exp["X"],  active_exp["expt_value"]*multiplication_function(active_exp['X']), yerr=active_exp["expt_value"]*multiplication_function(active_exp['X'])*active_exp["rel_unc"], label=np.unique(active_exp['expt_label']), fmt='.', color="b")
         else:
-            _ = axis.errorbar( active_exp["X"],  active_exp["expt_value"], yerr=active_exp["expt_value"]*active_exp["rel_unc"], fmt='.', color="b")
+            _ = axis.errorbar( active_exp["X"],  active_exp["expt_value"]*multiplication_function(active_exp['X']), yerr=active_exp["expt_value"]*multiplication_function(active_exp['X'])*active_exp["rel_unc"], fmt='.', color="b")
 def plot_bias(axis, plot_x, delta_plot, Nqs=None):
     if Nqs is None:
         _= axis.plot(plot_x, np.exp(delta_plot), 'b', alpha=0.1)
@@ -141,7 +141,7 @@ class BiasAnalysis:
         self.dataframe_plot = pd.DataFrame({k: self.BasisModel.data_dict[k] for k in ['X', 'expt_value', 'rel_unc', 'expt_label', 'bias_label', 'scale_flag']})
 
 
-    def get_ilevel_figure(self, ilevel, label_data=False, Nqs=None, feature=None):
+    def get_ilevel_figure(self, ilevel, label_data=False, Nqs=None, feature=None, multiplication_function=lambda x: 1):
 
         if self.dataframe_plot is None:
             raise ValueError("Plotable attributes have not been compiled, please run BiasAnalysis.compile_plotable_attributes()")
@@ -165,10 +165,10 @@ class BiasAnalysis:
         # make figure
         fig, axes = plt.subplots(2,1, figsize=(8,5), sharex=True, height_ratios=[3,1])
 
-        _ = axes[0].plot(self.BasisModel.saved_mean_bases_kwargs['X_grid'], np.mean(self.sigma,axis=0), alpha=1.0, color='k', label="Model", zorder=5)
-        _ = axes[0].plot(x, np.mean(exp_model_level, axis=1), 'b', label="Bias Model", alpha=1.0)
+        _ = axes[0].plot(self.BasisModel.saved_mean_bases_kwargs['X_grid'], np.mean(self.sigma,axis=0)*multiplication_function(self.BasisModel.saved_mean_bases_kwargs['X_grid']), alpha=1.0, color='k', label="Model", zorder=5)
+        _ = axes[0].plot(x, np.mean(exp_model_level, axis=1)*multiplication_function(x), 'b', label="Bias Model", alpha=1.0)
 
-        plot_active_inactive(axes[0], self.dataframe_plot[self.levels_mask[:,ilevel]==1], self.dataframe_plot[self.levels_mask[:,ilevel]==0], label_data=label_data)
+        plot_active_inactive(axes[0], self.dataframe_plot[self.levels_mask[:,ilevel]==1], self.dataframe_plot[self.levels_mask[:,ilevel]==0], label_data=label_data, multiplication_function=multiplication_function)
         axes[0].set_xscale('log'); axes[0].set_yscale('log') 
         axes[0].legend()
         
