@@ -81,6 +81,10 @@ def get_scale_factor(Xexp, Yexp, Xmod, Ymod):
         DMod_int = np.array(griddata(Xmod, Ymod, Xexp))
         n1 = 0; n2 = 0
         for index1 in range(0,len(Yexp)-1):
+            
+            if np.isnan(DMod_int[index1]):
+                continue
+
             n1 = n1+ 0.5*(DMod_int[index1]+DMod_int[index1+1]) * (Xexp[index1+1]-Xexp[index1])
             n2 = n2+0.5*(Yexp[index1]+Yexp[index1+1])*(Xexp[index1+1]-Xexp[index1])
         return n1/n2
